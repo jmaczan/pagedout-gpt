@@ -17,7 +17,6 @@ class AttentionHead(nn.Module):
 class MultiHeadAttention(nn.Module):
     def __init__(self, embeddings_dim, heads_count):
         super().__init__()
-        assert embeddings_dim % heads_count == 0
         self.single_head_size = embeddings_dim // heads_count
         self.heads = nn.ModuleList([AttentionHead(self.single_head_size) for _ in range(heads_count)])
         self.W_O = nn.Linear(embeddings_dim, embeddings_dim, bias=False)
@@ -52,8 +51,8 @@ class TransformerBlock(nn.Module):
         self.linear2 = nn.Linear(embeddings_dim * 4, embeddings_dim)
         self.dropout2 = nn.Dropout(p=0.1)
     def forward(self, x):
-        x = self.dropout1(self.multi_head_attn(self.layer_norm1(x))) + x
-        return self.dropout2(self.linear2(self.gelu(self.linear1(self.layer_norm2(x))))) + x
+        x = x + self.dropout1(self.multi_head_attn(self.layer_norm1(x)))
+        return x + self.dropout2(self.linear2(self.gelu(self.linear1(self.layer_norm2(x)))))
 
 class GPT(nn.Module):
     def __init__(self, vocab_size, emb_dim, ctx_window, heads_count, blocks_count):
